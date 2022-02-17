@@ -3,10 +3,13 @@
 def generateInput(numPoints, minX, maxX, minY, maxY):
     import random
     l = []
-    for i in range(0, numPoints):
+    while(len(l) < numPoints):
         x = random.randint(minX, maxX)
         y = random.randint(minY, maxY)
-        l.append(str(x)+','+str(y)+'\n')
+        el = str(x)+','+str(y)+'\n'
+        if el not in l:
+            l.append(el)  
+
     l[-1] = l[-1][:-1]
     with open('input.txt', 'w') as f:
         for elem in l:
