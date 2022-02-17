@@ -16,4 +16,10 @@ def plot(points, lines = [], figname = "plot"):
 
 
 # This script can be used also to plot points from a txt file
-#TODO
+import sys
+from utils import readInput
+if(len(sys.argv) == 2):
+    plot(readInput(sys.argv[1]))
+else:
+    sys.exit("Wrong number of arguments!\nGive the following: inputFile")
+    
