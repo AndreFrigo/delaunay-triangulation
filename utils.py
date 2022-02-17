@@ -28,3 +28,16 @@ def pointInTriangle(point, triangle):
         return True
     else:
         return False
+
+# Reads the input file and stores all the points
+# returns a list of tuples representing points
+def readInput(inputFile="input.txt"):
+    lines = []
+    ret = []
+    with open(inputFile) as f:
+        lines = f.readlines()
+    for line in lines:
+        s = line.rstrip()
+        s = s.split(',')
+        ret.append((int(s[0]), int(s[1])))
+    return ret
