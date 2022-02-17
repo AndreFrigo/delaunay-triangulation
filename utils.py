@@ -61,3 +61,27 @@ def isInsideCircle(p, triangle):
     radius = ((cx - b[0])**2 + (cy - b[1])**2)**.5
     # Check if p is inside
     return (p[0] - cx)**2 + (p[1] - cy)**2 <= radius**2
+
+
+#legalize the edge if it is illegal 
+#params: the point inserted 'p', the edge to control and maybe legalize 'e' and the actual triangulation 't'
+def legalizeEdge(p,e,t):
+    #let d be the (possible) vertex of the triangle e[0]-e[1]-v, check if d exists and finds its coordinates
+    v=None
+    for triangle in t:
+        if(e[0] in triangle and e[1] in triangle and p not in triangle):
+            v = triangle.copy()
+            v.remove(e[0])
+            v.remove(e[1])
+            v = v[0]
+    
+    #check if e is illegal
+    if (not isInsideCircle(p, [e[0], e[1], v])):
+        #TODO replace e with p-d in all the triangles containing the edge e (only 2, get from the graph)
+        legalizeEdge(p, (e[0], v), t)
+        legalizeEdge(p, (e[1], v), t)
+    return
+    
+
+
+# legalizeEdge((5,0), ((5,3),(1,0)), [[(5,3), (1,0), (2,3)]])
