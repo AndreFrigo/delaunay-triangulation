@@ -39,7 +39,7 @@ def pointInTriangle(point, triangle):
     else:
         return True
 
-#return 1 if the point is in the left, -1 if it is in the right, 0 if it is inside. Returns -2 if considering the wrong line direction
+#return 1 if the point is in the left, -1 if it is in the right, 0 if it is inside.
 def pointLinePosition(point, line):
     #check if the line is made by the two special points
     if (line == ((-2,-2), (-1,-1))):
