@@ -116,18 +116,42 @@ def legalizeEdge(p,e,t):
     return
     
 #returns a list containing the triangle (or 2 triangles in case of point in a shared edge) containing point p, given the point, the dag and a list of nodes of the dag where to look
-def findTriangle(p, dag, start, ret=[]):
+def findTrianglesPoint(p, dag, start, ret=[]):
     #ret contains the leafs of the DAG that represents triangles containing p (at most 2)
     # for construction every point must be inside the triangle P0,P-1,P-2
     for elem in start:
         if(dag[elem] == []): 
             ret.append(elem)
-    #staring nodes for recursive iteration
+    #starting nodes for recursive iteration
     newstart=[]
     for s in [item for item in start if item not in ret]:  
         for t in dag[s]:
             if pointInTriangle(p, t):
                 newstart.append(t)
     if newstart != []:
-        findTriangle(p, dag, newstart, ret)
+        findTrianglesPoint(p, dag, newstart, ret)
+    return ret
+
+#return True if "edge" is an edge of the triangle
+def edgeOfTriangle(edge, triangle):
+    p0 = triangle[0]
+    p1 = triangle[1]
+    p2 = triangle[2]
+    return (p0 in edge and p1 in edge) or (p1 in edge and p2 in edge) or (p2 in edge and p0 in edge)
+
+
+#returns one or two triangles that have the edge e, given the edge, the dag and a list of nodes of the dag where to look
+def findTrianglesEdge(edge, dag, start, ret=[]):
+    #ret contains the leafs of the DAG that represents triangles containing edge (at most 2)
+    for elem in start:
+        if(dag[elem] == []): 
+            ret.append(elem)
+    #starting nodes for recursive iteration
+    newstart=[]
+    for s in [item for item in start if item not in ret]:  
+        for t in dag[s]:
+            if edgeOfTriangle(edge, t):
+                newstart.append(t)
+    if newstart != []:
+        findTrianglesEdge(edge, dag, newstart, ret)
     return ret

@@ -1,7 +1,7 @@
 #triangle: [[x1,y1], [x2,y2], [x3,y3]]
 #special points: [-1,-1] and [-2,-2] that are used just to run the algorithm and then removed 
 from utils import readInput
-from utils import findTriangle
+from utils import findTrianglesPoint
 import random
 import utils
 
@@ -23,7 +23,7 @@ while(len(input)>0):
     #random choose a point
     p = input.pop(random.randrange(len(input)))
     #find the triangle (or 2 triangles) containing p
-    triangles = findTriangle(p, dag, [(p, (-1,-1), (-2,-2))])
+    triangles = findTrianglesPoint(p, dag, [(p, (-1,-1), (-2,-2))])
     #if "triangles" contains only one triangle then p is inside that triangle, otherwise it is in the common edge between the two triangles in the list "triangles"
     if len(triangles)==1:
         #add the three new triangles in the triangulation
