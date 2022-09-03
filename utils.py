@@ -97,23 +97,59 @@ def isInsideCircle(p, triangle):
 
 
 #legalize the edge if it is illegal 
-#params: the point inserted 'p', the edge to control and maybe legalize 'e' and the actual triangulation 't'
-def legalizeEdge(p,e,t):
-    #let d be the (possible) vertex of the triangle e[0]-e[1]-v, check if d exists and finds its coordinates
-    v=None
-    for triangle in t:
-        if(e[0] in triangle and e[1] in triangle and p not in triangle):
-            v = triangle.copy()
-            v.remove(e[0])
-            v.remove(e[1])
-            v = v[0]
+#params: the point inserted 'p', the edge to control and maybe legalize 'e' the DAG dag and the actual triangulation 't'
+def legalizeEdge(p, e, dag, t):
+    #get the triangles that have edge e
+    firstTriangle = list(dag.keys())[0]
+    triangles = findTrianglesEdge(e, dag, firstTriangle)
+    # k is the point of the triangle adjacent to (p, e[0], e[1])
+    k = None
+    for triangle in triangles:
+        for point in triangle:
+            if(point != p and point != e[0] and point != e[1]):
+                k = point
+
+    #if the edge is an edge of the first triangle (p0, p-1, p-2) then the edge is legal
+    if edgeOfTriangle(e, firstTriangle):
+        return
     
-    #check if e is illegal
-    if (not isInsideCircle(p, [e[0], e[1], v])):
-        #TODO replace e with p-d in all the triangles containing the edge e (only 2, get from the graph)
-        legalizeEdge(p, (e[0], v), t)
-        legalizeEdge(p, (e[1], v), t)
-    return
+    #if the 4 points are all real points (no p-1 or p-2) then the normal algorithm has to be executed
+    if p[0] >= 0 and e[0][0] >= 0 and e[1][0] >= 0 and k and k[0] >= 0:
+        #the edge is illegal if p is inside the circle made by e[0], e[1] and k
+        if isInsideCircle(p, [e[0], e[1], k]):
+            #replace the triangles
+            for triangle in triangles:
+                t.remove(triangle)
+                dag[triangle].append((p,k,e[0]), (p,k,e[1]))
+            t.append((p,k,e[0]))
+            t.append((p,k,e[1]))
+            dag[(p,k,e[0])] = []
+            dag[(p,k,e[1])] = []
+            legalizeEdge(p, (e[0], k), dag, t)
+            legalizeEdge(p, (e[1], k), dag, t)
+        return
+        
+    
+    # legal iff min(p, k) < min(e[0], e[1])
+    if k:
+        min1 = p if not pointGreater(p, k) else k
+        min2 = e[0] if not pointGreater(e[0], e[1]) else e[1]
+        if pointGreater(min2, min1):
+            #illegal edge
+            #replace the triangles
+            for triangle in triangles:
+                t.remove(triangle)
+                dag[triangle].append((p,k,e[0]), (p,k,e[1]))
+            t.append((p,k,e[0]))
+            t.append((p,k,e[1]))
+            dag[(p,k,e[0])] = []
+            dag[(p,k,e[1])] = []
+            legalizeEdge(p, (e[0], k), dag, t)
+            legalizeEdge(p, (e[1], k), dag, t)
+            return
+        return
+    print("ERROR in legalizeEdge\n")
+    return  
     
 #returns a list containing the triangle (or 2 triangles in case of point in a shared edge) containing point p, given the point, the dag and a list of nodes of the dag where to look
 def findTrianglesPoint(p, dag, start, ret=[]):
