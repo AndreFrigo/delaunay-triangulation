@@ -1,5 +1,13 @@
 #Checks whether point1 is greater than point2
 def pointGreater(point1, point2):
+    if point1 == (-2,-2):
+        return True
+    if point1 == (-1,-1):
+        return False
+    if point2 == (-2,-2):
+        return False
+    if point2 == (-1,-1):
+        return True
     if(point1[1] > point2[1]):
         return True
     elif(point1[1] == point2[1]):
