@@ -107,13 +107,19 @@ def legalizeEdge(p,e,t):
         legalizeEdge(p, (e[1], v), t)
     return
     
-#returns the triangle containing point p, given the point, the dag and the node of the dag where to look
-def findTriangle(p, dag, start):
-    if(start not in dag): 
-        return start
-    for elem in dag[start]:
-        if pointInTriangle(p, elem):
-            return findTriangle(p, dag, elem)
-
-
-# legalizeEdge((5,0), ((5,3),(1,0)), [[(5,3), (1,0), (2,3)]])
+#returns a list containing the triangle (or 2 triangles in case of point in a shared edge) containing point p, given the point, the dag and a list of nodes of the dag where to look
+def findTriangle(p, dag, start, ret=[]):
+    #ret contains the leafs of the DAG that represents triangles containing p (at most 2)
+    # for construction every point must be inside the triangle P0,P-1,P-2
+    for elem in start:
+        if(dag[elem] == []): 
+            ret.append(elem)
+    #staring nodes for recursive iteration
+    newstart=[]
+    for s in [item for item in start if item not in ret]:  
+        for t in dag[s]:
+            if pointInTriangle(p, t):
+                newstart.append(t)
+    if newstart != []:
+        findTriangle(p, dag, newstart, ret)
+    return ret
