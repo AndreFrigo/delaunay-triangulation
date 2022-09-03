@@ -84,8 +84,8 @@ def isInsideCircle(p, triangle):
     cy = ((b[0] - c[0]) * cd - (c[0] - d[0]) * bc) / det
     # Radius
     radius = ((cx - b[0])**2 + (cy - b[1])**2)**.5
-    # Check if p is inside
-    return (p[0] - cx)**2 + (p[1] - cy)**2 <= radius**2
+    # Check if p is inside, the round is to count for floating point approximation (approximating for 3 decimals)
+    return (p[0] - cx)**2 + (p[1] - cy)**2 < round(radius**2, 3)
 
 
 #legalize the edge if it is illegal 
