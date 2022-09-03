@@ -2,11 +2,15 @@
 #special points: [-1,-1] and [-2,-2] that are used just to run the algorithm and then removed 
 from utils import readInput
 from utils import findTrianglesPoint
+from utils import legalizeEdge
+from utils import pointLinePosition
 import random
 import utils
+import sys
 
 
 dag = {}
+triangulation = []
 input = readInput()
 
 #highest point p
@@ -16,6 +20,7 @@ for elem in input:
         p=elem
 input.remove(p)
 
+triangulation.append((p, (-1,-1), (-2,-2)))
 dag[(p, (-1,-1), (-2,-2))] = []
 
 
@@ -23,16 +28,68 @@ while(len(input)>0):
     #random choose a point
     p = input.pop(random.randrange(len(input)))
     #find the triangle (or 2 triangles) containing p
-    triangles = findTrianglesPoint(p, dag, [(p, (-1,-1), (-2,-2))])
+    triangles = findTrianglesPoint(p, dag, [list(dag.keys())[0]])
     #if "triangles" contains only one triangle then p is inside that triangle, otherwise it is in the common edge between the two triangles in the list "triangles"
     if len(triangles)==1:
         #add the three new triangles in the triangulation
         t = triangles[0]
+        triangulation.remove(t)
+        triangulation.append((p, t[0], t[1]))
+        triangulation.append((p, t[1], t[2]))
+        triangulation.append((p, t[2], t[0]))
         dag[t] = [(p, t[0], t[1]), (p, t[1], t[2]), (p, t[2], t[0])]
         dag[(p, t[0], t[1])] = []
         dag[(p, t[1], t[2])] = []
         dag[(p, t[2], t[0])] = []
         #legalize the edges
-        #TODO
+        legalizeEdge(p, (t[0], t[1]), dag, triangulation)
+        legalizeEdge(p, (t[1], t[2]), dag, triangulation)
+        legalizeEdge(p, (t[2], t[0]), dag, triangulation)
+    elif len(triangles) == 2:
+        #find the edge where p resides
+        e = None
+        for edge in triangles[0]:
+            if pointLinePosition(p, edge) == 0 and edgeOfTriangle(edge, triangles[1]):
+                e = edge
+        if e==None:
+            sys.exit("ERROR in main algorithm when point is on an edge of two triangles (1)\n")
+
+        #other point of the first triangle
+        pk = None
+        for point in triangles[0]:
+            if(point != e[0] and point != e[1]):
+                pk = point
+        #other point of the second triangle
+        pl = None
+        for point in triangles[0]:
+            if(point != e[0] and point != e[1]):
+                pl = point
+        if not pk or not pl:
+            sys.exit("ERROR in main algorithm when point is on an edge of two triangles (2)\n")
+
+        for t in triangles:
+            triangulation.remove(t)
+            if pk in t:
+                dag[t].append((e[0], pk, p))
+                dag[t].append((e[1], pk, p))
+                triangulation.append((e[0], pk, p))
+                triangulation.append((e[1], pk, p))
+
+            else:
+                dag[t].append((e[0], pl, p))
+                dag[t].append((e[1], pl, p))
+                triangulation.append((e[0], pl, p))
+                triangulation.append((e[1], pl, p))
+        dag[(e[0], pk, p)] = []
+        dag[(e[1], pk, p)] = []
+        dag[(e[0], pl, p)] = []
+        dag[(e[1], pl, p)] = []
+
+for elem in triangulation:
+    print(elem)
+
+
+            
+
 
 

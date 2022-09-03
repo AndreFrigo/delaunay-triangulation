@@ -1,3 +1,5 @@
+import sys
+
 #Checks whether point1 is greater than point2
 def pointGreater(point1, point2):
     if point1 == (-2,-2):
@@ -148,7 +150,7 @@ def legalizeEdge(p, e, dag, t):
             legalizeEdge(p, (e[1], k), dag, t)
             return
         return
-    print("ERROR in legalizeEdge\n")
+    sys.exit("ERROR in legalizeEdge\n")
     return  
     
 #returns a list containing the triangle (or 2 triangles in case of point in a shared edge) containing point p, given the point, the dag and a list of nodes of the dag where to look
