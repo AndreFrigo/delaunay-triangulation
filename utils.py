@@ -103,7 +103,13 @@ def isInsideCircle(p, triangle):
 def legalizeEdge(p, e, dag, t):
     #get the triangles that have edge e
     firstTriangle = list(dag.keys())[0]
-    triangles = findTrianglesEdge(e, dag, firstTriangle)
+    triangles = findTrianglesEdge(e, dag, [firstTriangle])
+    print("legalizeEdge -> EDGE: "+str(e)+", TRIANGLES: "+str(triangles))
+    print("legalizeEdge -> EDGE: "+str(e)+", TRIANGULATION: "+str(t))
+    #if the edge belongs only to a triangle then it cannot be flipped and it is by definition legal
+    if len(triangles)==1:
+        print("legalizeEdge -> THE EDGE BELONGS ONLY TO A TRIANGLE, SO IT IS LEGAL, RETURN")
+        return
     # k is the point of the triangle adjacent to (p, e[0], e[1])
     k = None
     for triangle in triangles:
@@ -113,18 +119,23 @@ def legalizeEdge(p, e, dag, t):
 
     #if the edge is an edge of the first triangle (p0, p-1, p-2) then the edge is legal
     if edgeOfTriangle(e, firstTriangle):
+        print("legalizeEdge -> EDGE OF THE FIRST TRIANGLE, RETURN")
         return
     
     #if the 4 points are all real points (no p-1 or p-2) then the normal algorithm has to be executed
     if p[0] >= 0 and e[0][0] >= 0 and e[1][0] >= 0 and k and k[0] >= 0:
+        print("legalizeEdge -> ALL THE POINTS ARE REAL, NORMAL ALGORITHM")
         #the edge is illegal if p is inside the circle made by e[0], e[1] and k
         if isInsideCircle(p, [e[0], e[1], k]):
             #replace the triangles
+            print("legalizeEdge -> SWAP EDGE")
             for triangle in triangles:
+                print("REMOVING: "+str(triangle))
                 t.remove(triangle)
                 dag[triangle].append((p,k,e[0]), (p,k,e[1]))
-            t.append((p,k,e[0]))
-            t.append((p,k,e[1]))
+            print("Appending "+str((p,k,e[0]))+", and "+str((p,k,e[1])))
+            addTriangle((p,k,e[0]), t)
+            addTriangle((p,k,e[1]), t)
             dag[(p,k,e[0])] = []
             dag[(p,k,e[1])] = []
             legalizeEdge(p, (e[0], k), dag, t)
@@ -134,40 +145,56 @@ def legalizeEdge(p, e, dag, t):
     
     # legal iff min(p, k) < min(e[0], e[1])
     if k:
+        print("legalizeEdge -> THE POINT OF THE TRIANGLE ADJACENT EXISTS, CHECKS FOR THE NON REAL POINTS")
         min1 = p if not pointGreater(p, k) else k
         min2 = e[0] if not pointGreater(e[0], e[1]) else e[1]
         if pointGreater(min2, min1):
             #illegal edge
             #replace the triangles
+            print("legalizeEdge -> SWAP EDGE")
+            print("Triangles: "+str(triangles))
+            print("K: "+str(k))
             for triangle in triangles:
+                print(triangle)
+                print("---------------")
+                for elem in t: print(elem)
+                print("REMOVING: "+str(triangle))
                 t.remove(triangle)
-                dag[triangle].append((p,k,e[0]), (p,k,e[1]))
-            t.append((p,k,e[0]))
-            t.append((p,k,e[1]))
+
+                dag[triangle].append((p,k,e[0])) 
+                dag[triangle].append((p,k,e[1]))
+            print("Appending "+str((p,k,e[0]))+", and "+str((p,k,e[1])))
+            addTriangle((p,k,e[0]), t)
+            addTriangle((p,k,e[1]), t)
             dag[(p,k,e[0])] = []
             dag[(p,k,e[1])] = []
             legalizeEdge(p, (e[0], k), dag, t)
             legalizeEdge(p, (e[1], k), dag, t)
             return
         return
-    sys.exit("ERROR in legalizeEdge\n")
+    sys.exit("ERROR in legalizeEdge, k="+str(k)+"\n")
     return  
     
 #returns a list containing the triangle (or 2 triangles in case of point in a shared edge) containing point p, given the point, the dag and a list of nodes of the dag where to look
 def findTrianglesPoint(p, dag, start, ret=[]):
+    # print("findTrianglesPoint -> START: "+str(start))
+    # print("findTrianglesPoint -> ret: "+str(ret))
+
     #ret contains the leafs of the DAG that represents triangles containing p (at most 2)
     # for construction every point must be inside the triangle P0,P-1,P-2
     for elem in start:
         if(dag[elem] == []): 
+            # print("findTrianglesPoint -> LEAF: "+str(elem))
             ret.append(elem)
     #starting nodes for recursive iteration
     newstart=[]
-    for s in [item for item in start if item not in ret]:  
+    for s in [item for item in start if item not in ret]: 
         for t in dag[s]:
             if pointInTriangle(p, t):
                 newstart.append(t)
     if newstart != []:
         findTrianglesPoint(p, dag, newstart, ret)
+    print("findTrianglesPoint -> RETURN: "+str(ret))
     return ret
 
 #return True if "edge" is an edge of the triangle
@@ -179,10 +206,15 @@ def edgeOfTriangle(edge, triangle):
 
 
 #returns one or two triangles that have the edge e, given the edge, the dag and a list of nodes of the dag where to look
-def findTrianglesEdge(edge, dag, start, ret=[]):
+#TODO: a volte ritorna doppioni, evitalo!
+def findTrianglesEdge(edge, dag, start, ret=None):
+    print("findTrianglesEdge-> DAG: "+str(dag))
+    if ret==None:
+        ret = []
     #ret contains the leafs of the DAG that represents triangles containing edge (at most 2)
     for elem in start:
-        if(dag[elem] == []): 
+        if(dag[elem] == [] and edgeOfTriangle(edge, elem)): 
+            print("findTrianglesEdge -> ret append: "+str(elem))
             ret.append(elem)
     #starting nodes for recursive iteration
     newstart=[]
@@ -192,4 +224,24 @@ def findTrianglesEdge(edge, dag, start, ret=[]):
                 newstart.append(t)
     if newstart != []:
         findTrianglesEdge(edge, dag, newstart, ret)
-    return ret
+    # print("findTrianglesEdge -> return: "+str(ret))
+    #remove duplicates
+    ret2=[]
+    for elem in ret:
+        check = False
+        for elem2 in ret2:
+            if isSameTriangle(elem, elem2): check=True
+        if not check: ret2.append(elem)
+    return ret2
+
+#add a triangle in the triangulation structure
+def addTriangle(triangle, triangulation):
+    check = False
+    for elem in triangulation:
+        if isSameTriangle(triangle, elem): check=True
+    if not check: triangulation.append(triangle)
+    return
+
+#checks if two triangles are the same
+def isSameTriangle(t1, t2):
+    return t1[0] in t2 and t1[1] in t2 and t1[2] in t2
