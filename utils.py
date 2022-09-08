@@ -239,7 +239,7 @@ def isConvex(p0, p1, e):
         return True
     #two special points, by constructions they cannot be both in the edge
     if (e0[0]<0 or e1[0]<0) and (p0[0]<0 or p1[0]<0):
-        
+        #all these conditions are not perfect, there could be false positive, but if the function returns false it is sure that the quadrilateral is not convex
         if e0==(-2,-2) and p0[0]<0:
             return pointGreater(p1, e1)
         if e0==(-2,-2) and p1[0]<0:
