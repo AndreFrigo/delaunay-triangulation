@@ -258,10 +258,6 @@ def isConvex(p0, p1, e):
         if e1==(-1,-1) and p0[0]<0:
             return pointGreater(e0, p1)
 
-    #both the points are special, the edge has to be between them so the quadrilateral is convex
-    elif(p0[0]<0 and p1[0]<0):
-        return True
-
     #one point of the edge is a special point, all the others are real
     if (e0[0]<0 or e1[0]<0) and (p0[0]>=0 and p1[0]>=0):
         line = (p0, p1) if pointGreater(p1,p0) else (p1,p0)
