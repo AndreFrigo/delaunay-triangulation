@@ -23,14 +23,11 @@ def pointGreater(point1, point2):
 # point has the following format: (x,y)
 # triangle has the following format: (p1, p2, p3), where p1, p2, p3 are the vertices 
 def pointInTriangle(point, triangle):
-    # print("POINTINTRIANGLE START point: "+str(point)+", triangle: "+str(triangle))
     l1 = (triangle[0], triangle[1])
     l2 = (triangle[1], triangle[2])
     l3 = (triangle[2], triangle[0])
     ret = [pointLinePosition(point, l1), pointLinePosition(point, l2), pointLinePosition(point, l3)]
 
-    # print("POINTINTRIANGLE -> ret: ")
-    # print(ret)
     if(1 in ret and -1 in ret):
         return False
     else:
@@ -42,7 +39,8 @@ def pointOnTriangle(point, triangle):
         if pointLinePosition(point, edge)==0: return edge
     return None
 
-#return 1 if the point is in the left, -1 if it is in the right, 0 if it is inside.
+#return 1 if the point is on the left of the line, -1 if it is on the right, 0 if it is inside.
+# the line can also contain one or two special points, the point instead has to be real 
 def pointLinePosition(point, line):
     #check if the line is made by the two special points
     if (line == ((-2,-2), (-1,-1))):
@@ -57,6 +55,7 @@ def pointLinePosition(point, line):
         if (a==(-1,-1) and pointGreater(b, point)): return 1
         if (b==(-2,-2) and pointGreater(a, point)): return 1
         return -1
+    #condition for normal points
     ret = (b[0] - a[0])*(point[1] - a[1]) - (b[1] - a[1])*(point[0] - a[0])
     #count for floating point approximation
     ret = round(ret, 3)
@@ -68,7 +67,7 @@ def pointLinePosition(point, line):
 
 # Reads the input file and stores all the points
 # returns a list of tuples representing points
-def readInput(inputFile="input.txt"):
+def readInput(inputFile):
     lines = []
     ret = []
     with open(inputFile) as f:
@@ -80,7 +79,7 @@ def readInput(inputFile="input.txt"):
     return ret
 
 # Checks if a point 'p' is inside the circle made from the points of the triangle 'triangle'
-# returns true if p is inside the circle
+# returns true if p is inside the circle, works only with normal points
 def isInsideCircle(p, triangle):
     b,c,d=triangle
     temp = c[0]**2 + c[1]**2
@@ -101,26 +100,17 @@ def isInsideCircle(p, triangle):
 
 
 #legalize the edge if it is illegal 
-#params: the point inserted 'p', the edge to control and maybe legalize 'e' the DAG dag and the actual triangulation 't', minPoint and maxPoint are the actual min and max point
+#params: the point inserted 'p', the edge to control and maybe legalize 'e', the DAG dag and the actual triangulation 't', minPoint and maxPoint are the actual min and max point
 def legalizeEdge(p, e, dag, t, minPoint, maxPoint):
     #get the triangles that have edge e
     firstTriangle = list(dag.keys())[0]
     triangles = findTrianglesEdge(e,t)
-    if len(triangles)>2: sys.exit("TOO MANY TRIANGLES FOUND")
-    # print("legalizeEdge-> p: "+str(p)+", edge: "+str(e)+"  -> EDGE: "+str(e)+", TRIANGLES: "+str(triangles)+", minPoint: "+str(minPoint)+", maxPoint: "+str(maxPoint))
 
     #if the edge is an edge of the first triangle (p0, p-1, p-2) then the edge is legal
     if edgeOfTriangle(e, firstTriangle):
-        # print("legalizeEdge-> p: "+str(p)+", edge: "+str(e)+"  -> EDGE OF THE FIRST TRIANGLE, RETURN")
         return
 
-    # #if the edge belongs only to a triangle then it cannot be flipped and it is by definition legal
-    # if len(triangles)==1:
-    #     print("legalizeEdge-> p: "+str(p)+", edge: "+str(e)+"  -> THE EDGE BELONGS ONLY TO A TRIANGLE, SO IT IS LEGAL, RETURN")
-    #     sys.exit("EDGE BELONGS ONLY TO A TRIANGLE (NOT THE ORIGINAL)!!!")
-    #     return
-
-    # k is the point of the triangle adjacent to (p, e[0], e[1])
+    # k is the point of the triangle adjacent to (p, e[0], e[1]), by definition this point has to exist if the edge is not one of the first triangle
     k = None
     for triangle in triangles:
         for point in triangle:
@@ -129,17 +119,14 @@ def legalizeEdge(p, e, dag, t, minPoint, maxPoint):
 
     #if the 4 points are all real points (no p-1 or p-2) then the normal algorithm has to be executed
     if p[0] >= 0 and e[0][0] >= 0 and e[1][0] >= 0 and k and k[0] >= 0:
-        # print("legalizeEdge-> p: "+str(p)+", k: "+str(k)+", edge: "+str(e)+"  -> ALL THE POINTS ARE REAL, NORMAL ALGORITHM")
+
         #the edge is illegal if p is inside the circle made by e[0], e[1] and k
         if isInsideCircle(p, [e[0], e[1], k]):
             #replace the triangles
-            # print("legalizeEdge-> p: "+str(p)+", k: "+str(k)+", edge: "+str(e)+"  -> SWAP EDGE")
             for triangle in triangles:
-                # print("REMOVING: "+str(triangle))
                 t.remove(triangle)
                 dagAppend(dag, triangle, (p,k,e[0]))
                 dagAppend(dag, triangle, (p,k,e[1]))
-            # print("Appending "+str((p,k,e[0]))+", and "+str((p,k,e[1])))
             addTriangle((p,k,e[0]), t)
             addTriangle((p,k,e[1]), t)
             dagLeaf(dag, (p,k,e[0]))
@@ -148,10 +135,8 @@ def legalizeEdge(p, e, dag, t, minPoint, maxPoint):
             legalizeEdge(p, (e[1], k), dag, t, minPoint, maxPoint)
         return
         
-    
-    # illegal if -2 in edge or (-2 or -1 in edge AND -2 and -1 not p and k)
+    # handle special points
     if k:
-        # print("legalizeEdge-> p: "+str(p)+", k: "+str(k)+", edge: "+str(e)+"  -> THE POINT OF THE TRIANGLE ADJACENT EXISTS, CHECKS FOR THE NON REAL POINTS")
         
         #check if the qudrilateral made from the 4 points is convex, if it is not then the edge is legal
         if not isConvex(p, k, e):
@@ -162,15 +147,14 @@ def legalizeEdge(p, e, dag, t, minPoint, maxPoint):
         if (e[0][0]<0 or e[1][0]<0):
             
             pswap = e[0] if e[0][0]>=0 else e[1]
-            if (minPoint==pswap or maxPoint==pswap): #TODO
-                # print("legalizeEdge-> p: "+str(p)+", k: "+str(k)+", edge: "+str(e)+"  -> ONE POINT OF THE EDGE IS THE MAX OR MIN, CHECK IF A SWAP WOULD INVALIDATE THE TRIANGULATION")
-                #save actual state and try to swap check if the condition has been broken
+            if (minPoint==pswap or maxPoint==pswap):
+                #save actual state and try to swap, check if the condition has been broken
                 backuptriangulation = t[:]
                 for triangle in triangles:
                     backuptriangulation.remove(triangle)
                 addTriangle((p,k,e[0]), backuptriangulation)
                 addTriangle((p,k,e[1]), backuptriangulation)
-                #check if the condition has been broken, if it is do not swap, otherwise continue with normal execution and possible swap
+                #check if the condition has been broken, if it is broken do not swap, otherwise continue with normal execution and possible swap
                 p_1 = False
                 p_2 = False
                 for triangle in backuptriangulation:
@@ -182,27 +166,22 @@ def legalizeEdge(p, e, dag, t, minPoint, maxPoint):
                 if p_1 == False or p_2 == False:
                     return
 
-
+        # condition for one or two special points (not both in the edge, already handled this case)
         if(min(p[0], k[0]) >= min(e[0][0], e[1][0])):
-            #illegal edge
-            # print("legalizeEdge-> p: "+str(p)+", k: "+str(k)+", edge: "+str(e)+"  -> SWAP EDGE")
-           
+            #illegal edge           
             #replace the triangles
             for triangle in triangles:
-                # print("REMOVING: "+str(triangle))
                 t.remove(triangle)
                 dagAppend(dag, triangle, (p,k,e[0]))
                 dagAppend(dag, triangle, (p,k,e[1]))
-            # print("Appending "+str((p,k,e[0]))+", and "+str((p,k,e[1])))
             addTriangle((p,k,e[0]), t)
             addTriangle((p,k,e[1]), t)
             dagLeaf(dag, (p,k,e[0]))
             dagLeaf(dag, (p,k,e[1]))
             legalizeEdge(p, (e[0], k), dag, t, minPoint, maxPoint)
             legalizeEdge(p, (e[1], k), dag, t, minPoint, maxPoint)
-            return
+
         return
-    sys.exit("ERROR in legalizeEdge, k="+str(k)+"\n")
     return  
     
 #returns a list containing the triangles that contain point p, given the point, the dag and the node of the dag where to look
@@ -214,7 +193,6 @@ def findTrianglesPoint(p, dag, start, ret=None):
     # for construction every point must be inside the triangle P0,P-1,P-2
     
     if(dag[start] == []): 
-        # print("findTrianglesPoint -> LEAF: "+str(start))
         ret.append(start)
     #starting nodes for recursive iteration
     if start not in ret:
@@ -236,7 +214,6 @@ def findTrianglesEdge(edge, triangulation):
     ret = []
     for t in triangulation:
         if edgeOfTriangle(edge, t): ret.append(t)
-    if len(ret)>2: sys.exit("ERROR, MORE THAN 2 TRIANGLES SHARE THE SAME EDGE!")
     return ret
     
 
@@ -262,7 +239,7 @@ def isConvex(p0, p1, e):
         return True
     #two special points, by constructions they cannot be both in the edge
     if (e0[0]<0 or e1[0]<0) and (p0[0]<0 or p1[0]<0):
-        #if e1 is on the right of (p0, p1) then it is convex
+        
         if e0==(-2,-2) and p0[0]<0:
             return pointGreater(p1, e1)
         if e0==(-2,-2) and p1[0]<0:
@@ -298,7 +275,6 @@ def isConvex(p0, p1, e):
             if e0==(-1,-1) and pointLinePosition(e1, line)==-1: return False
         return True
 
-    sys.exit("ERROR IN isConvex")
 
 #add an element to the children of a node of the dag
 def dagAppend(dag, node, triangle):
