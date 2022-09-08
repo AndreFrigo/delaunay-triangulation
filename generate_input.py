@@ -1,11 +1,13 @@
 #This script allows to randomly generate the input points
 #The generated file is "input.txt"
-def generateInput(numPoints, minX, maxX, minY, maxY):
+# example: python generate_input.py 20 100     generates 20 random point (all different) in the range (0-100, 0-100)
+
+def generateInput(numPoints, max):
     import random
     l = []
     while(len(l) < numPoints):
-        x = random.randint(minX, maxX)
-        y = random.randint(minY, maxY)
+        x = random.randint(0, max)
+        y = random.randint(0, max)
         el = str(x)+','+str(y)+'\n'
         if el not in l:
             l.append(el)  
@@ -25,12 +27,12 @@ def is_intstring(s):
 
 #generate input using parameters given from command line
 import sys
-if(len(sys.argv) == 6):
+if(len(sys.argv) == 3):
     for arg in sys.argv[1:]:
         if not is_intstring(arg):
             sys.exit("All arguments must be integers!")
 else:
-    sys.exit("Wrong number of arguments!\nGive the following: numPoints, minX, maxX, minY, maxY")
+    sys.exit("Wrong number of arguments!\nGive the following: numPoints, maxCoordinate")
     
 l = [int(arg) for arg in sys.argv[1:]]
-generateInput(l[0], l[1], l[2], l[3], l[4])
+generateInput(l[0], l[1])
